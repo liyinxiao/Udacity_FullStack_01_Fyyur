@@ -24,7 +24,6 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-# TODO: connect to a local postgresql database
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -39,6 +38,7 @@ class Venue(db.Model):
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
+    genres = db.Column(db.ARRAY(db.String()))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String(120))
@@ -57,7 +57,7 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
+    genres = db.Column(db.ARRAY(db.String()))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String(120))
@@ -148,9 +148,10 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-  venue = Venue.query.get(venue_id)
+  venue = db.session.query(Venue).get(venue_id)
   if not venue:
     return render_template('errors/404.html')
+
   upcoming_shows_query = db.session.query(Show).join(Artist).filter(Show.venue_id==venue_id).filter(Show.start_time>datetime.now()).all()
   upcoming_shows = []
 
@@ -160,16 +161,16 @@ def show_venue(venue_id):
   for show in past_shows_query:
     past_shows.append({
       "artist_id": show.artist_id,
-      "artist_name": show.artist.name,
-      "artist_image_link": show.artist.image_link,
+      "artist_name": show.Artist.name,
+      "artist_image_link": show.Artist.image_link,
       "start_time": show.start_time.strftime('%Y-%m-%d %H:%M:%S')
     })
 
   for show in upcoming_shows_query:
     upcoming_shows.append({
       "artist_id": show.artist_id,
-      "artist_name": show.artist.name,
-      "artist_image_link": show.artist.image_link,
+      "artist_name": show.Artist.name,
+      "artist_image_link": show.Artist.image_link,
       "start_time": show.start_time.strftime("%Y-%m-%d %H:%M:%S")
     })
 
@@ -279,29 +280,28 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   artist_query = db.session.query(Artist).get(artist_id)
-
   if not artist_query:
     return render_template('errors/404.html')
 
-  past_shows_query = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id).filter(Show.start_time>datetime.now()).all()
+  past_shows_query = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id).filter(Show.start_time<datetime.now()).all()
   past_shows = []
-
-  for show in past_shows_query:
-    past_shows.append({
-      "venue_id": show.venue_id,
-      "venue_name": show.venue.name,
-      "artist_image_link": show.venue.image_link,
-      "start_time": show.start_time.strftime('%Y-%m-%d %H:%M:%S')
-    })
 
   upcoming_shows_query = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id).filter(Show.start_time>datetime.now()).all()
   upcoming_shows = []
 
+  for show in past_shows_query:
+    past_shows.append({
+      "venue_id": show.venue_id,
+      "venue_name": show.Venue.name,
+      "artist_image_link": show.Venue.image_link,
+      "start_time": show.start_time.strftime('%Y-%m-%d %H:%M:%S')
+    })
+
   for show in upcoming_shows_query:
     upcoming_shows.append({
       "venue_id": show.venue_id,
-      "venue_name": show.venue.name,
-      "artist_image_link": show.venue.image_link,
+      "venue_name": show.Venue.name,
+      "artist_image_link": show.Venue.image_link,
       "start_time": show.start_time.strftime('%Y-%m-%d %H:%M:%S')
     })
 
@@ -474,10 +474,10 @@ def shows():
   for show in shows_query:
     data.append({
       "venue_id": show.venue_id,
-      "venue_name": show.venue.name,
+      "venue_name": show.Venue.name,
       "artist_id": show.artist_id,
-      "artist_name": show.artist.name,
-      "artist_image_link": show.artist.image_link,
+      "artist_name": show.Artist.name,
+      "artist_image_link": show.Artist.image_link,
       "start_time": show.start_time.strftime('%Y-%m-%d %H:%M:%S')
     })
   return render_template('pages/shows.html', shows=data)

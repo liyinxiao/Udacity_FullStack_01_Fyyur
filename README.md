@@ -1,6 +1,29 @@
 Fyyur
 -----
 
+### How to run this
+* pip3 install -r requirements.txt
+* Start postgres: pg_ctl -D /usr/local/var/postgres start
+  * If not installed, run installation
+    * brew install postgresql
+    * pip3 install psycopg2-binary
+* Create database fyyur
+  * dropdb fyyur (if exists)
+  * create fyyur
+* Migration
+  * pip3 install Flask-Migrate
+  * flask db init
+  * flask db migrate
+  * flask db upgrade
+* enter psql: psql fyyur
+  * check tables: \dt
+* run application
+  * FLASK_APP=app.py FLASK_DEBUG==true flask run
+  * python3 app.py
+* Go to http://127.0.0.1:5000/
+
+The below is from udacity.
+
 ### Introduction
 
 Fyyur is a musical venue and artist booking site that facilitates the discovery and bookings of shows between local performing artists and venues. This site lets you list new artists and venues, discover them, and list shows with artists as a venue owner.
@@ -38,7 +61,7 @@ Our tech stack will include:
   ├── forms.py *** Your forms
   ├── requirements.txt *** The dependencies we need to install with "pip3 install -r requirements.txt"
   ├── static
-  │   ├── css 
+  │   ├── css
   │   ├── font
   │   ├── ico
   │   ├── img
